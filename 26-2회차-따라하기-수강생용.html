@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2회차 따라하기 — 홈페이지 배포와 API 연동</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; scroll-padding-top: 60px; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Pretendard', 'Malgun Gothic', sans-serif;
+    color: #1d1d1f; background: #fbfbfd; line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+  header {
+    position: sticky; top: 0; z-index: 100; height: 48px;
+    display: flex; align-items: center; gap: 18px; padding: 0 20px;
+    background: rgba(251,251,253,.9); backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(0,0,0,.08); font-size: 13px;
+    overflow-x: auto; scrollbar-width: none;
+  }
+  header::-webkit-scrollbar { display: none; }
+  header .logo { font-weight: 700; white-space: nowrap; }
+  header a { color: rgba(29,29,31,.7); text-decoration: none; white-space: nowrap; }
+  header a:hover { color: #1d1d1f; }
+
+  .wrap { max-width: 760px; margin: 0 auto; padding: 48px 20px 100px; }
+  h1 { font-size: clamp(28px, 5vw, 40px); font-weight: 700; letter-spacing: -1px; line-height: 1.2; }
+  .subtitle { color: #6e6e73; font-size: 17px; margin: 12px 0 8px; }
+
+  .step {
+    background: #fff; border-radius: 20px; padding: 32px 28px; margin-top: 28px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05), 0 8px 24px rgba(0,0,0,.04);
+  }
+  .step h2 { font-size: 22px; font-weight: 700; letter-spacing: -0.4px; display: flex; align-items: center; gap: 10px; }
+  .num {
+    flex: none; width: 30px; height: 30px; border-radius: 50%;
+    background: #0071e3; color: #fff; font-size: 15px; font-weight: 700;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .step h3 { font-size: 17px; font-weight: 700; margin: 22px 0 6px; }
+  .step p, .step li { font-size: 15.5px; color: #3a3a3c; }
+  .step p { margin-top: 10px; }
+  .step ol, .step ul { margin: 10px 0 0 22px; }
+  .step li { margin-top: 6px; }
+  .step li::marker { color: #86868b; font-weight: 600; }
+
+  .prompt { position: relative; margin-top: 14px; }
+  .prompt .tag {
+    display: inline-block; font-size: 12px; font-weight: 700; color: #0071e3;
+    background: #eaf3fe; border-radius: 6px 6px 0 0; padding: 4px 12px;
+  }
+  .prompt.ask .tag { color: #1b7a4b; background: #e7f6ec; }
+  .prompt pre {
+    background: #1d1d1f; color: #f5f5f7; border-radius: 0 12px 12px 12px;
+    padding: 18px 18px 16px; font-size: 14px; line-height: 1.6;
+    font-family: 'SF Mono', Consolas, 'Courier New', monospace;
+    white-space: pre-wrap; word-break: break-all;
+  }
+  .copy {
+    position: absolute; top: 34px; right: 10px;
+    font: inherit; font-size: 12px; font-weight: 600; cursor: pointer;
+    color: #f5f5f7; background: rgba(255,255,255,.15); border: none;
+    border-radius: 8px; padding: 6px 12px;
+  }
+  .copy:hover { background: rgba(255,255,255,.28); }
+  .copy.done { background: #30d158; color: #fff; }
+
+  .warn {
+    margin-top: 14px; padding: 13px 16px; border-radius: 12px; font-size: 14.5px;
+    background: #fff8e6; border: 1px solid #f5e3ae; color: #6b5618;
+  }
+  .warn b { color: #513f05; }
+  .info {
+    margin-top: 14px; padding: 13px 16px; border-radius: 12px; font-size: 14.5px;
+    background: #eaf3fe; border: 1px solid #c6dff8; color: #1d4f83;
+  }
+
+  .flowbar {
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    flex-wrap: wrap; margin-top: 16px; font-size: 14px; font-weight: 600;
+  }
+  .flowbar span { background: #f5f5f7; border-radius: 100px; padding: 8px 16px; }
+  .flowbar em { color: #86868b; font-style: normal; }
+
+  table { border-collapse: collapse; width: 100%; margin-top: 14px; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid #e8e8ed; vertical-align: top; }
+  th { color: #6e6e73; font-weight: 600; white-space: nowrap; }
+
+  .check { list-style: none; margin-left: 0 !important; }
+  .check li { display: flex; gap: 10px; align-items: baseline; margin-top: 8px; }
+  .check input { transform: translateY(2px); accent-color: #0071e3; }
+
+  footer { text-align: center; color: #86868b; font-size: 12.5px; margin-top: 60px; }
+  code { background: #f0f0f2; border-radius: 5px; padding: 1px 6px; font-size: .92em; font-family: 'SF Mono', Consolas, monospace; }
+</style>
+</head>
+<body>
+
+<header>
+  <span class="logo">2회차 따라하기</span>
+  <a href="#s1">①시작</a><a href="#s3">②깃허브</a><a href="#s2">③개념</a>
+  <a href="#s4">④넷리파이</a><a href="#s5">⑤API</a><a href="#s6">⑥구글시트</a>
+  <a href="#s7">⑦마무리</a><a href="#faq">막힐 때</a>
+</header>
+
+<div class="wrap">
+
+<h1>내 홈페이지를<br>진짜 인터넷에 올려보자 🚀</h1>
+<p class="subtitle">2회차 — 깃허브 · 넷리파이 배포 · 한국은행 API · 구글시트 문의 폼</p>
+<div class="flowbar">
+  <span>🍳 내 컴퓨터</span><em>→</em><span>📦 깃허브</span><em>→</em><span>🍽️ 넷리파이(서버)</span>
+</div>
+
+<div class="info"><b>💡 이 문서의 진짜 사용법</b> — 순서를 다 외울 필요 없습니다. 뭘 해야 할지 모르면 <b>일단 클로드에게 물어보세요.</b> 각 단계의 🙋 초록 상자가 그 예시입니다. 아래 정리된 순서는, 그렇게 물어보면 나올 답을 미리 받아 적은 것뿐이에요.</div>
+
+<div class="step" id="s0">
+  <h2><span class="num">0</span>준비물 체크</h2>
+  <ul class="check">
+    <li><input type="checkbox"><span>바탕화면에 <code>homepage</code> 폴더 만들고, 받은 <code>index.html</code> 넣기</span></li>
+    <li><input type="checkbox"><span>Claude Code를 그 폴더에서 열기</span></li>
+    <li><input type="checkbox"><span>github.com 계정 (없어도 OK — 2단계에서 같이 만듭니다)</span></li>
+    <li><input type="checkbox"><span>netlify.com 계정 (구글 계정으로 가입 가능)</span></li>
+    <li><input type="checkbox"><span>구글 계정 (구글시트용)</span></li>
+  </ul>
+</div>
+
+<div class="step" id="s1">
+  <h2><span class="num">1</span>세션 시작 — 1회차 이어받기</h2>
+  <p>클로드 코드에 아래를 그대로 붙여넣으세요. HTML 파일 하나만 있으면 어느 컴퓨터에서든 작업을 이어갈 수 있습니다.</p>
+  <div class="prompt"><span class="tag">💬 클로드에게 붙여넣기</span>
+<pre>이 폴더에 index.html 파일이 있어. 1회차 수업에서 만든 회사 홈페이지야.
+파일을 읽고 어떤 사이트인지 파악한 다음, 로컬에서 브라우저로 열어서 보여줘.
+이제 이 파일에 기능을 추가하는 작업을 이어서 할 거야.</pre></div>
+</div>
+
+<div class="step" id="s3">
+  <h2><span class="num">2</span>깃허브에 코드 올리기</h2>
+  <div class="prompt ask"><span class="tag">🙋 뭘 해야 할지 모르겠으면 — 먼저 물어보세요</span>
+<pre>지금 만든 홈페이지를 깃허브에 올려서 백업해두고 싶어.
+깃허브는 처음이라 계정도 없어. 명령어는 내가 직접 안 치고 올리는 건 네가 다 해줘.
+계정 만들기부터 순서대로, 내가 브라우저에서 할 일만 쉽게 알려줘.</pre></div>
+  <p>클로드가 "계정과 저장소만 만들어 주시면 올리는 건 제가 합니다"라고 답합니다 — 여러분이 할 일은 아래 브라우저 작업이 전부예요.</p>
+  <ol>
+    <li>github.com 접속 → 오른쪽 위 <b>Sign up</b> → 이메일·비밀번호 입력, 인증 메일 확인하면 계정 완성</li>
+    <li>로그인된 화면에서 왼쪽 위 <b>New</b> 버튼</li>
+    <li>Repository name 입력 (예: <code>homepage</code>) → <b>Public</b> 선택</li>
+    <li>⚠️ "Add a README" 등 체크박스는 <b>전부 해제</b> (빈 저장소여야 함)</li>
+    <li><b>Create repository</b> → 화면에 뜨는 <code>https://github.com/계정/이름.git</code> 주소 복사</li>
+  </ol>
+  <div class="prompt"><span class="tag">💬 클로드에게 붙여넣기 (주소는 내 것으로 교체)</span>
+<pre>이 폴더를 git 저장소로 만들고 깃허브에 올려줘.
+저장소 주소는 https://github.com/계정명/저장소이름.git 이야.</pre></div>
+  <div class="warn"><b>로그인 창이 떠도 놀라지 마세요.</b> 첫 푸시 때 브라우저로 GitHub 로그인 창이 한 번 뜹니다. 로그인하면 그다음부터는 자동이에요.</div>
+  <p>끝나면 깃허브 페이지를 새로고침 — 내 파일이 올라가 있으면 성공! ✅</p>
+</div>
+
+<div class="step" id="s2">
+  <h2><span class="num">3</span>개념 잡기 — "배포"가 뭐예요?</h2>
+  <p>지금 홈페이지는 <b>내 컴퓨터에만</b> 있어요. 주소창이 <code>file:///</code>로 시작하면 나만 볼 수 있다는 뜻입니다. 남들이 보려면 24시간 켜져 있는 컴퓨터, 즉 <b>서버</b>에 올려야 하고 — 그게 <b>배포(Deploy)</b>입니다.</p>
+  <table>
+    <tr><th>내 컴퓨터</th><td>🍳 주방 — 요리(수정)하는 곳. 나만 봄 (<code>file:///</code>)</td></tr>
+    <tr><th>깃허브</th><td>📦 레시피 보관소 — 코드 저장 + 버전 기록 (세이브 포인트)</td></tr>
+    <tr><th>넷리파이</th><td>🍽️ 식당 — 전 세계 누구나 접속 (<code>https://</code>)</td></tr>
+  </table>
+</div>
+
+<div class="step" id="s4">
+  <h2><span class="num">4</span>넷리파이로 배포하기</h2>
+  <div class="prompt ask"><span class="tag">🙋 뭘 써야 할지 모르겠으면 — 먼저 물어보세요</span>
+<pre>깃허브에 올린 홈페이지를 넷리파이(Netlify)라는 무료 서비스로 진짜 인터넷 주소에 배포하고 싶어.
+나중에 API 연동 기능도 붙일 거야. 어떤 순서로 하면 되는지 쉽게 알려줘.</pre></div>
+  <p><b>넷리파이를 콕 집어 말하는 이유</b> — 그냥 "배포해줘"라고 물으면 깃허브 페이지스를 추천받기도 하는데, 거기엔 나중에 붙일 API 기능(서버 함수·환경변수)이 없습니다. 순서는 아래에 정리돼 있어요.</p>
+
+  <h3>4-1. 수동 배포 (드래그 앤 드롭)</h3>
+  <ol>
+    <li>netlify.com 로그인 → <b>Projects</b> 화면 맨 아래 <b>"Drag and drop your folder here"</b> 상자 (안 보이면 주소창에 <b>app.netlify.com/drop</b>)</li>
+    <li><code>index.html</code>이 들어있는 <b>폴더째로</b> 화면에 드래그 (⚠️ 파일 말고 폴더!)</li>
+    <li>몇 초 뒤 <code>https://랜덤이름.netlify.app</code> 생성 — 내 사이트가 인터넷에 떴다! 🎉</li>
+  </ol>
+  <p>이제 수정을 해보면...</p>
+  <div class="prompt"><span class="tag">💬 클로드에게 붙여넣기 (주소는 방금 만들어진 내 것으로 교체)</span>
+<pre>방금 이 홈페이지가 https://랜덤이름.netlify.app 주소로 인터넷에 배포됐어.
+페이지에서 바꿀 곳은 네가 하나 골라서 문구를 살짝 바꿔줘. 로컬에서만 수정해.
+앞으로 깃허브에 올리는 건 내가 따로 알려줄게.</pre></div>
+  <p>사이트를 새로고침해도 <b>안 바뀌죠?</b> 수동 배포는 수정할 때마다 폴더를 또 끌어다 놔야 합니다. 귀찮죠. 그래서 →</p>
+
+  <h3>4-2. 깃허브 연동 (자동 배포)</h3>
+  <ol>
+    <li>넷리파이에서 <b>Add new project → Import an existing project → GitHub</b></li>
+    <li>아까 만든 저장소 선택 → 설정 그대로 <b>Deploy</b></li>
+    <li>배포 완료되면 링크 클릭해서 확인 (연습용 드롭 사이트는 지워도 됨)</li>
+  </ol>
+  <div class="prompt"><span class="tag">💬 클로드에게 붙여넣기</span>
+<pre>아까 수정한 거 깃허브에 올려줘.</pre></div>
+  <p>잠시 후 사이트 새로고침 — <b>넷리파이를 안 건드렸는데 사이트가 바뀌었죠?</b> 이게 자동 배포입니다.</p>
+  <div class="info"><b>깃허브를 쓰면 이게 편합니다</b> — 넷리파이(식당)가 내 깃허브(레시피 보관소)를 계속 지켜보고 있다가, 새 버전이 올라오는 순간 알아서 사이트를 새로 만듭니다. 나는 클로드에게 "깃허브에 올려줘" 한 마디만 하면 배포 끝 — 폴더를 다시 끌어다 놓을 일이 없어요.</div>
+  <p>앞으로의 작업 방식:</p>
+  <div class="info"><b>국룰 워크플로우</b> — ① 평소엔 "로컬에서만 수정해줘"로 계속 다듬고 브라우저로 확인 (공짜·무제한) ② 완성되면 "깃허브에 올려줘" 한 마디 ③ 실제 사이트 자동 업데이트</div>
+  <div class="warn"><b>크레딧 주의</b> — 무료 계정은 월 300크레딧, <b>배포 1번에 15크레딧</b>(한 달 약 20번). 글자 하나 고칠 때마다 올리지 말고, 로컬에서 다듬고 한 번에 배포하세요.</div>
+</div>
+
+<div class="step" id="s5">
+  <h2><span class="num">5</span>한국은행 API — 시장 지표 넣기</h2>
+  <div class="prompt ask"><span class="tag">🙋 어떤 API를 쓸지 모르겠으면 — 먼저 물어보세요</span>
+<pre>홈페이지에 기준금리, 코스피·코스닥, 원/달러 환율이 자동으로 표시되게 하고 싶어.
+무료 API 중에 뭘 쓰는 게 좋을지, 키는 어떻게 발급받는지 알려줘.</pre></div>
+  <p><b>한국은행 ECOS API</b>를 추천받게 됩니다 — 키 1개로 네 가지가 전부 되거든요. 발급 순서는 아래에.</p>
+  <p><b>API란?</b> 프로그램용 전화 창구예요. 우리 홈페이지가 한국은행에 "기준금리 알려줘"라고 물으면 기계가 읽기 좋은 형태로 답해줍니다. <b>API 키는 출입증</b> — 비밀번호처럼 다루세요.</p>
+  <h3>키 발급</h3>
+  <ol>
+    <li><b>https://ecos.bok.or.kr/api/#/</b> 접속 (⚠️ 끝의 <code>/#/</code>까지 입력)</li>
+    <li>오른쪽 위 <b>인증키 신청</b> 바로 클릭 — 로그인/회원가입 화면이 자동으로 이어집니다 (처음이면 여기서 가입)</li>
+    <li>신청서 작성 (목적: 개인 학습용) → 보통 즉시 발급 → <b>마이페이지</b>에서 키 확인</li>
+  </ol>
+  <div class="prompt"><span class="tag">💬 클로드에게 붙여넣기 (키는 내 것으로 교체)</span>
+<pre>한국은행 ECOS API 키를 발급받았어: (여기에 키 붙여넣기)
+홈페이지에 기준금리, 원/달러 환율, 코스피, 코스닥을 보여주는
+시장 지표 섹션을 추가해줘. 사이트 디자인에 맞춰서.
+API 키가 코드에 노출되지 않게 안전한 방식으로 해줘.</pre></div>
+  <h3>환경변수 등록 (배포 전에 꼭!)</h3>
+  <ol>
+    <li>넷리파이 → 내 프로젝트 → <b>Project configuration → Environment variables → Add a variable</b></li>
+    <li>Key: <code>ECOS_API_KEY</code> / Value: 발급받은 키 → 저장</li>
+  </ol>
+  <div class="prompt"><span class="tag">💬 등록 후 클로드에게</span>
+<pre>깃허브에 올려줘.</pre></div>
+  <div class="info"><b>"왜 로컬에서는 안 보여요?"</b> — 지표를 가져오는 비서(서버 함수)는 넷리파이에만 있어요. 로컬에서 값이 "—"로 뜨는 건 정상. 배포된 사이트에서 확인하세요.</div>
+</div>
+
+<div class="step" id="s6">
+  <h2><span class="num">6</span>구글시트 문의 폼</h2>
+  <p>홈페이지에 문의가 오면 내 구글시트에 자동으로 쌓이게 만듭니다.</p>
+  <div class="prompt ask"><span class="tag">🙋 방법을 모르겠으면 — 먼저 물어보세요</span>
+<pre>홈페이지에 문의하기 폼을 달고, 제출된 내용이 내 구글시트에 자동으로 쌓이게 하고 싶어.
+서버 없이 무료로 되는 방법으로, 내가 구글에서 클릭해야 하는 것까지 순서대로 알려줘.</pre></div>
+  <p>구글 <b>Apps Script</b> 방법을 알려줍니다 — 아래에 붙여넣을 코드까지 미리 준비해뒀어요.</p>
+  <h3>구글 쪽 설정</h3>
+  <ol>
+    <li>sheets.google.com → 빈 스프레드시트 → 1행에 <code>시간</code> <code>이름</code> <code>연락처</code> <code>문의내용</code> 입력</li>
+    <li>메뉴 <b>확장 프로그램 → Apps Script</b> → 기존 코드 지우고 아래 코드 붙여넣기 → 저장(💾)</li>
+  </ol>
+  <div class="prompt"><span class="tag">📋 Apps Script에 붙여넣기</span>
+<pre>function doPost(e) {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var p = e.parameter;
+  sheet.appendRow([new Date(), p.name || '', p.contact || '', p.message || '']);
+  return ContentService.createTextOutput(JSON.stringify({ result: 'ok' }))
+    .setMimeType(ContentService.MimeType.JSON);
+}</pre></div>
+  <ol start="3">
+    <li><b>배포 → 새 배포</b> → ⚠️ 왼쪽 <b>톱니바퀴에서 "웹 앱" 선택</b> (안 하면 URL이 안 나와요!)</li>
+    <li>실행 계정: <b>나</b> / 액세스 권한: <b>모든 사용자</b> ← ⚠️ 제일 많이 틀리는 곳</li>
+    <li>승인 과정에서 <b>"확인되지 않은 앱"</b> 경고가 떠도 정상입니다 (내가 방금 만든 앱이라 그래요) → <b>고급 → 이동 → 허용</b></li>
+    <li><code>/exec</code>로 끝나는 <b>웹 앱 URL</b> 복사 (창을 닫았으면: 배포 → 배포 관리에서 다시 확인)</li>
+  </ol>
+  <div class="prompt"><span class="tag">💬 클로드에게 붙여넣기 (URL은 내 것으로 교체)</span>
+<pre>구글 Apps Script로 문의 접수창구를 만들었어. URL은 이거야: (웹앱 URL 붙여넣기)
+홈페이지에 문의하기 폼(이름, 연락처, 문의내용)을 만들어서
+제출하면 이 주소로 전송되게 해줘. 로컬에서만 작업하고 아직 배포하지 마.</pre></div>
+  <p>로컬 브라우저에서 폼을 제출해보세요 → 구글시트에 한 줄 추가되면 성공! (이건 로컬에서도 작동해요)</p>
+</div>
+
+<div class="step" id="s7">
+  <h2><span class="num">7</span>마무리 — 모바일 + QR + 배포, 한 번에</h2>
+  <p>마지막입니다. 모바일 대응부터 QR, 배포까지 프롬프트 하나로 끝냅니다:</p>
+  <div class="prompt"><span class="tag">💬 마무리 프롬프트 (주소는 내 사이트 주소로 교체)</span>
+<pre>핸드폰에서 봐도 안 깨지게 모바일 화면 대응해줘. 모바일 화면으로 직접 확인하면서 고쳐줘.
+그리고 내 사이트 주소 https://내주소.netlify.app 으로 가는 QR 코드를
+문의 폼 아래에 넣어줘. 외부 서비스 의존 없이 HTML 안에 이미지로 심어줘.
+다 되면 깃허브에 배포해줘.</pre></div>
+  <h3>최종 확인 체크리스트</h3>
+  <ul class="check">
+    <li><input type="checkbox"><span>휴대폰으로 내 사이트 접속 — 레이아웃 안 깨지는지</span></li>
+    <li><input type="checkbox"><span>시장 지표 4개 값이 나오는지</span></li>
+    <li><input type="checkbox"><span>휴대폰에서 문의 제출 → 구글시트에 찍히는지</span></li>
+    <li><input type="checkbox"><span>QR 코드 스캔 → 내 사이트로 연결되는지</span></li>
+  </ul>
+  <p style="margin-top:18px">전부 체크됐다면 — <b>축하합니다. 여러분의 사이트가 전 세계에 공개됐습니다!</b> 🎉</p>
+</div>
+
+<div class="step" id="faq">
+  <h2><span class="num">?</span>막혔을 때 — 자주 나오는 문제</h2>
+  <table>
+    <tr><th>증상</th><td><b>해결</b></td></tr>
+    <tr><th>깃허브에 push가 안 돼요</th><td>브라우저에 GitHub 로그인 창이 떠 있는지 확인 → 로그인</td></tr>
+    <tr><th>드롭했는데 404가 떠요</th><td>파일이 아니라 <b>폴더째</b> 드래그했는지, 파일명이 <code>index.html</code>인지 확인</td></tr>
+    <tr><th>Apps Script URL이 안 나와요</th><td>새 배포에서 톱니바퀴 → <b>"웹 앱"</b>을 선택했는지 확인. 이미 배포했다면 배포 → 배포 관리</td></tr>
+    <tr><th>폼을 보내도 시트에 안 찍혀요</th><td>Apps Script 배포의 액세스 권한이 <b>"모든 사용자"</b>인지 확인 (수정했으면 재배포)</td></tr>
+    <tr><th>시장 지표가 "—"로만 나와요</th><td>① 로컬이면 정상 (배포된 사이트에서 확인) ② 배포했는데도 안 나오면 넷리파이 환경변수 <code>ECOS_API_KEY</code> 등록 후 <b>다시 배포</b></td></tr>
+    <tr><th>"확인되지 않은 앱" 경고</th><td>정상입니다 — 고급 → 이동 → 허용</td></tr>
+    <tr><th>사이트에 수정이 반영 안 돼요</th><td>클로드에게 "깃허브에 올려줘"라고 했는지 확인 (로컬 수정만으로는 사이트가 안 바뀜)</td></tr>
+  </table>
+  <div class="info">그래도 안 되면 — 손 들고 부르세요. 에러 메시지를 클로드에게 그대로 붙여넣고 "이거 왜 안 돼?"라고 물어보는 것도 좋은 방법입니다.</div>
+</div>
+
+<footer>2회차 수업 자료 · 막히면 이 문서의 프롬프트를 순서대로 복사해서 따라오세요</footer>
+
+</div>
+
+<script>
+document.querySelectorAll('.prompt pre').forEach(function (pre) {
+  var btn = document.createElement('button');
+  btn.className = 'copy';
+  btn.textContent = '복사';
+  btn.addEventListener('click', function () {
+    navigator.clipboard.writeText(pre.textContent).then(function () {
+      btn.textContent = '복사됨 ✓'; btn.classList.add('done');
+      setTimeout(function () { btn.textContent = '복사'; btn.classList.remove('done'); }, 1500);
+    });
+  });
+  pre.parentElement.appendChild(btn);
+});
+</script>
+
+</body>
+</html>
