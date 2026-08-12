@@ -11,6 +11,8 @@
     font-family: -apple-system, BlinkMacSystemFont, 'SF Pro KR', 'Apple SD Gothic Neo', 'Pretendard', 'Segoe UI', 'Malgun Gothic', sans-serif;
     color: #1d1d1f; background: #fff; line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    word-break: keep-all;
+    overflow-x: hidden;
   }
   a { text-decoration: none; color: inherit; }
 
@@ -27,6 +29,10 @@
   nav { display: flex; gap: 32px; }
   nav a { color: rgba(29,29,31,.72); transition: color .2s; }
   nav a:hover { color: #1d1d1f; }
+  .nav-toggle {
+    display: none; background: none; border: none; font-size: 20px;
+    color: #1d1d1f; cursor: pointer; padding: 4px 8px; line-height: 1;
+  }
 
   /* ---------- Hero ---------- */
   .hero {
@@ -152,9 +158,73 @@
   .contact p { font-size: 17px; color: #6e6e73; margin-bottom: 6px; }
   .contact .big { font-size: 28px; font-weight: 700; color: #1d1d1f; margin-bottom: 20px; letter-spacing: -0.5px; }
 
+  /* ---------- Contact form ---------- */
+  .contact-form {
+    max-width: 480px; margin: 48px auto 0; text-align: left;
+    background: #fff; border-radius: 28px; padding: 40px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.05);
+  }
+  .contact-form label { display: block; font-size: 14px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px; }
+  .contact-form .field { margin-bottom: 20px; }
+  .contact-form input, .contact-form textarea {
+    width: 100%; font-family: inherit; font-size: 16px; color: #1d1d1f;
+    background: #f5f5f7; border: 1px solid transparent; border-radius: 12px;
+    padding: 14px 16px; letter-spacing: -0.2px; transition: border-color .2s, background .2s;
+  }
+  .contact-form input:focus, .contact-form textarea:focus {
+    outline: none; background: #fff; border-color: #0a84ff;
+  }
+  .contact-form textarea { min-height: 120px; resize: vertical; }
+  .contact-form button {
+    width: 100%; font-family: inherit; font-size: 17px; font-weight: 600;
+    color: #fff; background: #1d1d1f; border: none; border-radius: 12px;
+    padding: 15px; cursor: pointer; transition: background .2s;
+  }
+  .contact-form button:hover { background: #000; }
+  .contact-form button:disabled { background: #a1a1a6; cursor: not-allowed; }
+  .contact-form .form-msg { margin-top: 16px; font-size: 14px; text-align: center; min-height: 20px; }
+  .contact-form .form-msg.ok { color: #248a3d; }
+  .contact-form .form-msg.err { color: #ff3b30; }
+
+  /* ---------- QR card ---------- */
+  .qr-card {
+    max-width: 480px; margin: 24px auto 0; text-align: center;
+    background: #fff; border-radius: 28px; padding: 32px 40px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.05);
+  }
+  .qr-card svg { width: 160px; height: 160px; }
+  .qr-card p { font-size: 14px; color: #6e6e73; margin-top: 14px; letter-spacing: -0.2px; }
+  .qr-card .qr-url { font-size: 13px; color: #86868b; margin-top: 4px; word-break: break-all; }
+
   footer {
     background: #fbfbfd; border-top: 1px solid rgba(0,0,0,.06);
     text-align: center; padding: 28px; font-size: 12px; color: #86868b;
+  }
+
+  /* ---------- Mobile overrides (kept last so they win the cascade) ---------- */
+  @media (max-width: 680px) {
+    header { justify-content: space-between; padding: 0 20px; }
+    nav {
+      display: none; position: absolute; top: 48px; left: 0; right: 0;
+      flex-direction: column; gap: 0; background: #fbfbfd;
+      border-bottom: 1px solid rgba(0,0,0,.06);
+      box-shadow: 0 8px 20px rgba(0,0,0,.06);
+    }
+    nav.open { display: flex; }
+    nav a { padding: 14px 20px; border-top: 1px solid rgba(0,0,0,.06); font-size: 15px; }
+    .nav-toggle { display: block; }
+
+    section { padding: 64px 20px; }
+    .hero { padding: 100px 20px 72px; }
+    .billboard { padding: 72px 20px; }
+    .billboard .huge { font-size: clamp(36px, 12vw, 64px); }
+    .mini-stats { gap: 36px; margin-top: 48px; }
+    .group { padding: 72px 20px; }
+    .panel { padding: 32px 24px; }
+    .tile { padding: 40px 28px; }
+    .contact-form { padding: 28px 20px; margin-top: 36px; }
+    .qr-card { padding: 24px 20px; }
+    .sec-head { margin-bottom: 44px; }
   }
 </style>
 </head>
@@ -162,7 +232,7 @@
 
 <header>
   <div class="logo">JB자산운용</div>
-  <nav>
+  <nav id="site-nav">
     <a href="#ceo">CEO 인사말</a>
     <a href="#values">회사소개</a>
     <a href="#market">시장지표</a>
@@ -172,6 +242,7 @@
     <a href="#risk">리스크 관리</a>
     <a href="#contact">문의</a>
   </nav>
+  <button class="nav-toggle" id="nav-toggle" aria-label="메뉴 열기" aria-expanded="false">☰</button>
 </header>
 
 <section class="hero">
@@ -337,9 +408,49 @@
   <p class="big">www.jbam.co.kr</p>
   <p>본점 — 전북 전주</p>
   <p>서울지점 운영</p>
+
+  <form class="contact-form" id="contact-form">
+    <div class="field">
+      <label for="cf-name">이름</label>
+      <input type="text" id="cf-name" name="name" required autocomplete="name">
+    </div>
+    <div class="field">
+      <label for="cf-phone">연락처</label>
+      <input type="tel" id="cf-phone" name="phone" required autocomplete="tel" placeholder="010-0000-0000">
+    </div>
+    <div class="field">
+      <label for="cf-message">문의내용</label>
+      <textarea id="cf-message" name="message" required></textarea>
+    </div>
+    <button type="submit" id="cf-submit">문의 보내기</button>
+    <div class="form-msg" id="cf-msg"></div>
+  </form>
+
+  <div class="qr-card">
+    <svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 35 35" shape-rendering="crispEdges"><path fill="#ffffff" d="M0 0h35v35H0z"/><path stroke="#1d1d1f" d="M1 1.5h7m9 0h1m1 0h3m1 0h2m2 0h7M1 2.5h1m5 0h1m4 0h2m2 0h1m2 0h1m3 0h1m3 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h1m2 0h1m2 0h3m2 0h5m2 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h2m1 0h1m3 0h1m2 0h2m1 0h1m1 0h2m1 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h2m1 0h1m2 0h3m3 0h2m1 0h2m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h1m2 0h1m6 0h2m4 0h1m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h1m1 0h2m2 0h1m1 0h1m2 0h3m2 0h1M1 9.5h1m1 0h5m2 0h3m1 0h1m3 0h1m1 0h1m2 0h1m1 0h1m1 0h5M1 10.5h4m3 0h2m1 0h1m1 0h3m1 0h2m1 0h2m2 0h1m2 0h2m1 0h2m1 0h1M2 11.5h1m4 0h1m1 0h1m4 0h3m1 0h1m2 0h1m1 0h1m1 0h2m2 0h1m1 0h2M5 12.5h2m4 0h1m1 0h2m1 0h4m4 0h2m1 0h1m1 0h3m1 0h1M2 13.5h1m3 0h2m2 0h4m1 0h3m3 0h3m2 0h1m1 0h3m1 0h2M1 14.5h2m2 0h1m3 0h5m2 0h1m2 0h1m2 0h1m1 0h1m1 0h2m2 0h1m1 0h2M2 15.5h2m3 0h1m1 0h2m2 0h1m2 0h2m3 0h2m2 0h3m4 0h1M1 16.5h3m4 0h2m2 0h3m1 0h1m2 0h1m2 0h2m1 0h7M3 17.5h2m1 0h2m2 0h3m1 0h1m1 0h3m4 0h1m1 0h2m1 0h2m3 0h1M1 18.5h1m2 0h1m3 0h2m2 0h3m4 0h6m2 0h2m1 0h2m1 0h1M2 19.5h2m1 0h1m1 0h2m5 0h1m1 0h2m1 0h1m1 0h2m4 0h3m1 0h1M1 20.5h1m1 0h3m2 0h1m4 0h2m2 0h1m3 0h3m1 0h2m1 0h6M3 21.5h1m1 0h3m2 0h1m4 0h2m2 0h2m1 0h1m5 0h3m1 0h1M1 22.5h1m2 0h3m2 0h5m1 0h3m3 0h4m2 0h1m2 0h2m1 0h1M1 23.5h1m2 0h1m2 0h1m1 0h1m1 0h1m8 0h1m1 0h2m2 0h1m1 0h1m1 0h3M1 24.5h1m2 0h1m5 0h3m1 0h1m2 0h1m2 0h3m2 0h2m2 0h4M1 25.5h1m3 0h3m2 0h1m2 0h2m2 0h2m1 0h1m2 0h1m1 0h6m1 0h2M9 26.5h1m1 0h1m2 0h1m3 0h4m3 0h1m3 0h1m1 0h3M1 27.5h7m3 0h3m1 0h4m2 0h1m1 0h3m1 0h1m1 0h1m1 0h1M1 28.5h1m5 0h1m1 0h2m1 0h2m1 0h5m1 0h1m2 0h2m3 0h4M1 29.5h1m1 0h3m1 0h1m1 0h6m2 0h1m2 0h4m1 0h6M1 30.5h1m1 0h3m1 0h1m1 0h4m1 0h3m2 0h1m2 0h1m2 0h2m2 0h3m1 0h1M1 31.5h1m1 0h3m1 0h1m1 0h1m1 0h1m2 0h1m1 0h2m3 0h4m2 0h2m2 0h1M1 32.5h1m5 0h1m2 0h2m1 0h1m1 0h2m5 0h2m2 0h2m1 0h3M1 33.5h7m1 0h2m1 0h1m2 0h2m1 0h2m4 0h2m1 0h2m3 0h1"/></svg>
+    <p>모바일로 스캔하면 홈페이지로 바로 접속됩니다.</p>
+    <p class="qr-url">elaborate-manatee-74da17.netlify.app</p>
+  </div>
 </section>
 
 <footer>Copyright © 2026 JB자산운용 주식회사. All rights reserved. — JB금융그룹 계열사</footer>
+
+<script>
+(function () {
+  const toggle = document.getElementById('nav-toggle');
+  const nav = document.getElementById('site-nav');
+  toggle.addEventListener('click', function () {
+    const isOpen = nav.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+  nav.querySelectorAll('a').forEach(function (a) {
+    a.addEventListener('click', function () {
+      nav.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+})();
+</script>
 
 <script>
 (function () {
@@ -390,6 +501,49 @@
       cards.forEach((c) => { c.querySelector('.m-value').textContent = '불러오기 실패'; });
       updatedEl.textContent = '';
     });
+})();
+</script>
+
+<script>
+(function () {
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbyvxbR_B1g04Frm-202xPD19beQnWEF8aNecmDL08fyjc0iOMpPgktSVbaQm-enhyg/exec';
+  var form = document.getElementById('contact-form');
+  var btn = document.getElementById('cf-submit');
+  var msg = document.getElementById('cf-msg');
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    msg.textContent = '';
+    msg.className = 'form-msg';
+    btn.disabled = true;
+    btn.textContent = '보내는 중...';
+
+    var payload = {
+      name: form.name.value.trim(),
+      phone: form.phone.value.trim(),
+      message: form.message.value.trim(),
+    };
+
+    fetch(ENDPOINT, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify(payload),
+    })
+      .then(function () {
+        msg.textContent = '문의가 정상적으로 접수되었습니다.';
+        msg.className = 'form-msg ok';
+        form.reset();
+      })
+      .catch(function () {
+        msg.textContent = '전송에 실패했습니다. 잠시 후 다시 시도해주세요.';
+        msg.className = 'form-msg err';
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = '문의 보내기';
+      });
+  });
 })();
 </script>
 </body>
