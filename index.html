@@ -101,6 +101,21 @@
   .tile li::before { content: '— '; color: #d2d2d7; }
   @media (max-width: 720px) { .tiles { grid-template-columns: 1fr; } }
 
+  /* ---------- Market indicators ---------- */
+  .market-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .market-card {
+    border-radius: 24px; padding: 32px 24px; background: #fff; text-align: center;
+    box-shadow: 0 2px 12px rgba(0,0,0,.04), 0 12px 32px rgba(0,0,0,.05);
+  }
+  .market-card .m-label { font-size: 14px; color: #6e6e73; font-weight: 600; margin-bottom: 10px; }
+  .market-card .m-value { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; color: #1d1d1f; }
+  .market-card .m-change { font-size: 13px; margin-top: 8px; font-weight: 600; }
+  .market-card .m-change.up { color: #ff3b30; }
+  .market-card .m-change.down { color: #0a84ff; }
+  .market-card .m-change.flat { color: #86868b; }
+  .market-updated { text-align: center; font-size: 13px; color: #86868b; margin-top: 28px; }
+  @media (max-width: 820px) { .market-grid { grid-template-columns: repeat(2, 1fr); } }
+
   /* ---------- AUM table ---------- */
   .aum { max-width: 640px; margin: 0 auto; }
   .aum-row {
@@ -150,6 +165,7 @@
   <nav>
     <a href="#ceo">CEO 인사말</a>
     <a href="#values">회사소개</a>
+    <a href="#market">시장지표</a>
     <a href="#aum">수탁고</a>
     <a href="#history">연혁</a>
     <a href="#business">사업영역</a>
@@ -219,6 +235,22 @@
       <div class="tile"><span class="icon">⚖️</span><h3>윤리의식 제고</h3><p>윤리의식 제고를 통해 선량한 관리자 의무를 준수합니다.</p></div>
       <div class="tile"><span class="icon">✅</span><h3>준법 프로세스</h3><p>내부통제제도를 기반으로 준법 투자프로세스를 준수합니다.</p></div>
     </div>
+  </div>
+</section>
+
+<section id="market">
+  <div class="inner">
+    <div class="sec-head">
+      <h2>시장 지표</h2>
+      <p>한국은행 ECOS 기준, 실시간 참고 데이터.</p>
+    </div>
+    <div class="market-grid" id="market-grid">
+      <div class="market-card"><div class="m-label">기준금리</div><div class="m-value">—</div></div>
+      <div class="market-card"><div class="m-label">원/달러 환율</div><div class="m-value">—</div></div>
+      <div class="market-card"><div class="m-label">코스피</div><div class="m-value">—</div></div>
+      <div class="market-card"><div class="m-label">코스닥</div><div class="m-value">—</div></div>
+    </div>
+    <div class="market-updated" id="market-updated"></div>
   </div>
 </section>
 
@@ -309,5 +341,56 @@
 
 <footer>Copyright © 2026 JB자산운용 주식회사. All rights reserved. — JB금융그룹 계열사</footer>
 
+<script>
+(function () {
+  const cards = document.querySelectorAll('#market-grid .market-card');
+  const [rateCard, fxCard, kospiCard, kosdaqCard] = cards;
+  const updatedEl = document.getElementById('market-updated');
+
+  function renderCard(card, item, opts) {
+    const valueEl = card.querySelector('.m-value');
+    if (!item) {
+      valueEl.textContent = '데이터 없음';
+      return;
+    }
+    const formatted = opts.decimals != null
+      ? item.value.toLocaleString('ko-KR', { minimumFractionDigits: opts.decimals, maximumFractionDigits: opts.decimals })
+      : item.value.toLocaleString('ko-KR');
+    valueEl.textContent = `${formatted}${opts.suffix || ''}`;
+
+    if (item.prevValue != null) {
+      let changeEl = card.querySelector('.m-change');
+      if (!changeEl) {
+        changeEl = document.createElement('div');
+        changeEl.className = 'm-change';
+        card.appendChild(changeEl);
+      }
+      const diff = item.value - item.prevValue;
+      const dir = diff > 0 ? 'up' : diff < 0 ? 'down' : 'flat';
+      const arrow = diff > 0 ? '▲' : diff < 0 ? '▼' : '-';
+      changeEl.className = `m-change ${dir}`;
+      changeEl.textContent = `${arrow} ${Math.abs(diff).toLocaleString('ko-KR', { maximumFractionDigits: opts.decimals ?? 2 })}`;
+    }
+  }
+
+  fetch('/.netlify/functions/market-data')
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.error) throw new Error(data.error);
+      renderCard(rateCard, data.baseRate, { suffix: '%', decimals: 2 });
+      renderCard(fxCard, data.fx, { suffix: '원', decimals: 1 });
+      renderCard(kospiCard, data.kospi, { decimals: 2 });
+      renderCard(kosdaqCard, data.kosdaq, { decimals: 2 });
+      if (data.fetchedAt) {
+        const d = new Date(data.fetchedAt);
+        updatedEl.textContent = `업데이트: ${d.toLocaleString('ko-KR')}`;
+      }
+    })
+    .catch(() => {
+      cards.forEach((c) => { c.querySelector('.m-value').textContent = '불러오기 실패'; });
+      updatedEl.textContent = '';
+    });
+})();
+</script>
 </body>
 </html>
